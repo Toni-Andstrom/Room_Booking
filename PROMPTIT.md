@@ -23,3 +23,17 @@
 - Miten voin nähdä vain tietyn huoneen varaukset
 
 - miten estän jo menneen päivän tai ajan varaamisen?
+
+- Miten saan ajanvaraukset aikajärjestykseen?
+
+- meneekö sortedBookings päällekkäin filterBookings kanssa?
+
+- mihin sortedBookings tulee return statementissä
+
+- minulla on siinä kohtaa filteredBookings jo
+
+- Nyt ajat tulevat oikeassa järjestyksessä mutta en enää näe vain tietyn huoneen varauksia.
+
+- miten saan lisättyä varaajan nimen varaukseen
+
+- miten saan poistettua tämän päivän varaus vaihtoehdoista jo menneet kellonajat?

@@ -54,13 +54,13 @@ function isOverlapping(existing, newBooking) {
 
 // Tee varaus
 app.post("/api/bookings", (req, res) => {
-  const { roomId, date, time } = req.body;
+  const { roomId, date, time, name } = req.body;
 
-  if (!roomId || !date || !time) {
+  if (!roomId || !date || !time || !name) {
     return res.status(400).json({ message: "Täytä kaikki kentät!" });
   }
 
-  const newBooking = { roomId, date, time };
+  const newBooking = { roomId, date, time, name };
 
   // Tarkista päällekkäisyydet
   const overlapping = bookings.find(b => isOverlapping(b, newBooking));

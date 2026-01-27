@@ -5,6 +5,7 @@ function App() {
   const [roomId, setRoomId] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [name, setName] = useState("");
   const [bookings, setBookings] = useState([]);
 
   // Hae huoneet
@@ -23,12 +24,12 @@ function App() {
 
   // Tee varaus
   const bookRoom = async () => {
-    if (!roomId || !date || !time) return alert("Täytä kaikki kentät!");
+    if (!roomId || !date || !time || !name) return alert("Täytä kaikki kentät!");
 
     const response = await fetch("http://localhost:3001/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roomId, date, time }),
+      body: JSON.stringify({ roomId, date, time, name }),
     });
 
     if (response.status === 409) {
@@ -57,17 +58,37 @@ for (let hour = 8; hour < 18; hour++) {
 }
 
 const availableTimes = timeSlots.filter(t => {
-  return !bookings.some(b =>
-    b.roomId === roomId &&
-    b.date === date &&
-    b.time === t
+  if (!roomId || !date) return false;
+
+  const now = new Date();
+  const slotDateTime = new Date(`${date}T${t}:00`);
+  const today = new Date().toISOString().split("T")[0];
+
+  return (
+    // ei menneitä aikoja tänään
+    (date !== today || slotDateTime > now) &&
+
+    // ei jo varattuja aikoja
+    !bookings.some(
+      b => b.roomId === roomId && b.date === date && b.time === t
+    )
   );
 });
+
 
 const filteredBookings = roomId
   ? bookings.filter(b => b.roomId === roomId)
   : bookings;
 
+const sortedBookings = [...filteredBookings].sort((a, b) => {
+  // Ensin päivä
+  if (a.date !== b.date) {
+    return a.date.localeCompare(b.date);
+  }
+
+  // Sama päivä → kellonaika
+  return a.time.localeCompare(b.time);
+});
 
 
   return (
@@ -103,6 +124,15 @@ const filteredBookings = roomId
   ))}
 </select>
 
+<br />
+
+<input
+  type="text"
+  placeholder="Varaajan nimi"
+  value={name}
+  onChange={e => setName(e.target.value)}
+/>
+
 
       <br /><br />
 
@@ -112,11 +142,11 @@ const filteredBookings = roomId
 
       <h2>Varaukset</h2>
       <ul>
-        {filteredBookings.map(b => {
+        {sortedBookings.map(b => {
           const room = rooms.find(r => r.id === b.roomId);
           return (
             <li key={b.id}>
-              {room ? room.name : "Tuntematon huone"} – {b.date} {b.time}
+              {room ? room.name : "Tuntematon huone"} – {b.date} {b.time} <strong>({b.name})</strong>
               <button
                 style={{ marginLeft: 10 }}
                 onClick={() => deleteBooking(b.id)}
