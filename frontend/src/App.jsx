@@ -57,6 +57,7 @@ for (let hour = 8; hour < 18; hour++) {
   timeSlots.push(`${String(hour).padStart(2, "0")}:30`);
 }
 
+
 const availableTimes = timeSlots.filter(t => {
   if (!roomId || !date) return false;
 
@@ -157,10 +158,44 @@ const sortedBookings = [...filteredBookings].sort((a, b) => {
           );
         })}
       </ul>
+      <h2>Päivän varaukset</h2>
+
+<table border="1" cellPadding="8">
+  <thead>
+    <tr>
+      <th>Aika</th>
+      {rooms.map(room => (
+        <th key={room.id}>{room.name}</th>
+      ))}
+    </tr>
+  </thead>
+
+  <tbody>
+    {timeSlots.map(time => (
+      <tr key={time}>
+        <td>{time}</td>
+
+        {rooms.map(room => {
+          const booking = bookings.find(
+            b =>
+              b.roomId === room.id &&
+              b.date === date &&
+              b.time === time
+          );
+
+          return (
+            <td key={room.id + time}>
+              {booking ? booking.name : "Vapaa"}
+            </td>
+          );
+        })}
+      </tr>
+    ))}
+  </tbody>
+</table>
+
     </div>
   );
 }
 
 export default App;
-
-

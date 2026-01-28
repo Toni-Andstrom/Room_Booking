@@ -37,3 +37,5 @@
 - miten saan lisättyä varaajan nimen varaukseen
 
 - miten saan poistettua tämän päivän varaus vaihtoehdoista jo menneet kellonajat?
+
+- voiko eri neuvotteluhuoneen varaukset saada näkyviin samalle sivulle table muotoon?
