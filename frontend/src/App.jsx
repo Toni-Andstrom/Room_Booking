@@ -2,14 +2,11 @@ import { useEffect, useState } from "react";
 
 function App() {
   const [rooms, setRooms] = useState([]);
-  const [roomId, setRoomId] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [name, setName] = useState("");
   const [bookings, setBookings] = useState([]);
-
-  // 🔹 Nykyinen päivä
-  const today = new Date().toISOString().split("T")[0];
+  const [calendarDate, setCalendarDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [calendarName, setCalendarName] = useState("");
 
   // Hae huoneet
   useEffect(() => {
@@ -25,9 +22,9 @@ function App() {
       .then(setBookings);
   }, []);
 
-  // Tee varaus
-  const bookRoom = async () => {
-    if (!roomId || !date || !time || !name) return alert("Täytä kaikki kentät!");
+  // Tee varaus tableltä
+  const bookRoomFromTable = async (roomId, date, time, name) => {
+    if (!roomId || !date || !time || !name) return;
 
     const response = await fetch("http://localhost:3001/api/bookings", {
       method: "POST",
@@ -42,7 +39,6 @@ function App() {
 
     const newBooking = await response.json();
     setBookings(prev => [...prev, newBooking]);
-    alert("Varaus tehty!");
   };
 
   // Poista varaus
@@ -53,151 +49,121 @@ function App() {
     setBookings(prev => prev.filter(b => b.id !== id));
   };
 
-  // 🔹 Aikavälit
+  // 30 minuutin aikavälit 8:00 - 18:00
   const timeSlots = [];
   for (let hour = 8; hour < 18; hour++) {
     timeSlots.push(`${String(hour).padStart(2, "0")}:00`);
     timeSlots.push(`${String(hour).padStart(2, "0")}:30`);
   }
 
-  // 🔹 Vapaat ajat dropdowniin
-  const availableTimes = timeSlots.filter(t => {
-    if (!roomId || !date) return false;
-
-    const now = new Date();
-    const slotDateTime = new Date(`${date}T${t}:00`);
-
-    return (
-      (date !== today || slotDateTime > now) &&
-      !bookings.some(
-        b => b.roomId === roomId && b.date === date && b.time === t
-      )
-    );
-  });
-
-  // 🔹 Suodatetut + järjestetyt varaukset
-  const filteredBookings = roomId
-    ? bookings.filter(b => b.roomId === roomId)
-    : bookings;
-
-  const sortedBookings = [...filteredBookings].sort((a, b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return a.time.localeCompare(b.time);
-  });
+  const now = new Date();
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 20, fontFamily: "Arial, sans-serif" }}>
       <h1>Kokoushuonevaraus</h1>
 
-      <select onChange={e => setRoomId(Number(e.target.value))} value={roomId}>
-        <option value="">Valitse huone</option>
-        {rooms.map(room => (
-          <option key={room.id} value={room.id}>
-            {room.name}
-          </option>
-        ))}
-      </select>
+      <div style={{ marginBottom: 10 }}>
+        <label>
+          Valitse päivä:{" "}
+          <input
+            type="date"
+            value={calendarDate}
+            min={new Date().toISOString().split("T")[0]}
+            onChange={(e) => setCalendarDate(e.target.value)}
+          />
+        </label>
+      </div>
 
-      <br /><br />
+      <div style={{ marginBottom: 10 }}>
+        <label>
+          Varaajan nimi:{" "}
+          <input
+            type="text"
+            placeholder="Varaajan nimi"
+            value={calendarName}
+            onChange={(e) => setCalendarName(e.target.value)}
+          />
+        </label>
+      </div>
 
-      <input
-        type="date"
-        min={today}
-        onChange={e => setDate(e.target.value)}
-        value={date}
-      />
-
-      <select
-        value={time}
-        onChange={e => setTime(e.target.value)}
-        disabled={!roomId || !date}
+      <table
+        border="1"
+        cellPadding="8"
+        style={{ borderCollapse: "collapse", width: "100%" }}
       >
-        <option value="">Valitse aika</option>
-        {availableTimes.map(t => (
-          <option key={t} value={t}>{t}</option>
-        ))}
-      </select>
-
-      <br /><br />
-
-      <input
-        type="text"
-        placeholder="Varaajan nimi"
-        value={name}
-        onChange={e => setName(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={bookRoom}>Varaa</button>
-
-      <hr />
-
-      <h2>Varaukset</h2>
-      <ul>
-        {sortedBookings.map(b => {
-          const room = rooms.find(r => r.id === b.roomId);
-          return (
-            <li key={b.id}>
-              {room ? room.name : "Tuntematon huone"} – {b.date} {b.time}{" "}
-              <strong>({b.name})</strong>
-              <button style={{ marginLeft: 10 }} onClick={() => deleteBooking(b.id)}>
-                Poista
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      <h2>Päivän varaukset</h2>
-
-      <table border="1" cellPadding="8">
         <thead>
           <tr>
             <th>Aika</th>
-            {rooms.map(room => (
+            {rooms.map((room) => (
               <th key={room.id}>{room.name}</th>
             ))}
           </tr>
         </thead>
 
         <tbody>
-          {timeSlots.map(time => (
-            <tr key={time}>
-              <td>{time}</td>
+          {timeSlots.map((time) => {
+            const slotDateTime = new Date(`${calendarDate}T${time}:00`);
+            const isPast = slotDateTime < now;
 
-              {rooms.map(room => {
-                const booking = bookings.find(
-                  b =>
-                    b.roomId === room.id &&
-                    b.date === date &&
-                    b.time === time
-                );
+            return (
+              <tr key={time}>
+                <td>{time}</td>
+                {rooms.map((room) => {
+                  const booking = bookings.find(
+                    (b) =>
+                      b.roomId === room.id &&
+                      b.date === calendarDate &&
+                      b.time === time
+                  );
 
-                const slotDateTime = new Date(`${date}T${time}:00`);
-                const now = new Date();
-                const isPast = date === today && slotDateTime < now;
+                  let bgColor = isPast ? "#ccc" : booking ? "#f88" : "#8f8";
 
-                let bgColor = "";
-                if (isPast) bgColor = "#eeeeee";        // harmaa
-                else if (booking) bgColor = "#f8d7da";  // punainen
-                else bgColor = "#d4edda";               // vihreä
-
-                return (
-                  <td
-                    key={room.id + time}
-                    style={{ backgroundColor: bgColor }}
-                  >
-                    {booking
-                      ? booking.name
-                      : isPast
-                      ? "Mennyt"
-                      : "Vapaa"}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+                  return (
+                    <td
+                      key={room.id + time}
+                      style={{
+                        cursor:
+                          !isPast && (!booking || booking) ? "pointer" : "default",
+                        backgroundColor: bgColor,
+                        transition: "all 0.2s",
+                        textAlign: "center",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!booking && !isPast) e.target.style.backgroundColor = "aqua";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = bgColor;
+                      }}
+                      onClick={() => {
+                        if (booking) {
+                          if (
+                            window.confirm(
+                              `Haluatko perua varauksen: ${booking.name}?`
+                            )
+                          ) {
+                            deleteBooking(booking.id);
+                          }
+                        } else if (!isPast) {
+                          if (!calendarName)
+                            return alert(
+                              "Täytä varaajan nimi ennen varausta!"
+                            );
+                          bookRoomFromTable(
+                            room.id,
+                            calendarDate,
+                            time,
+                            calendarName
+                          );
+                        }
+                      }}
+                    >
+                      {booking ? booking.name : isPast ? "Mennyt" : "Vapaa"}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

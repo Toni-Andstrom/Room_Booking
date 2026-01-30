@@ -43,3 +43,27 @@
 - miten saan taulukon solujen värit olemaan eriväriset kun aika on jo mennyt, kun aika on varattu ja kuin aika on vapaa?
 
 - voitko tehdä koko app.jsx missä on uudet lisäykset mukana?
+
+- haluaisin lisätä hover efektin kun kursori osuu vapaaseen aikaa tablessa
+
+- voiko päiväykset kääntää järjestykseen päivä kuukausi vuosi?
+
+- Voitko tehdä tablelle päivämäärän valitsimen jos asiakas haluaa nähdä muiden päivien varaus tilanteen?
+
+- älä käytä app.css fileä
+
+- voitko tehdä niin että voin varata aikani tablesta? Vaikka dropdown menu tyyliin
+
+- onko mahdollista että huone varataan vain nappia painamalla? Varaukseen pitäisi kyllä saada nimi
+
+- Voitko tehdä input mihin varaaja kirjoittaa nimensa ja lisätä tableen tai ainakin tablen yläpuolelle missä valitaan päiväkin?
+
+- tee valmis App.jsx
+
+- Lisää hover efekti
+
+- Tee valmis versio
+
+- voiko nappia uudestaan painamalla perua varauksensa?
+
+- voitko tehdä kokonaisen App.jsx version
