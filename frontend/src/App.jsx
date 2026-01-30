@@ -8,6 +8,9 @@ function App() {
   const [name, setName] = useState("");
   const [bookings, setBookings] = useState([]);
 
+  // 🔹 Nykyinen päivä
+  const today = new Date().toISOString().split("T")[0];
+
   // Hae huoneet
   useEffect(() => {
     fetch("http://localhost:3001/api/rooms")
@@ -34,11 +37,11 @@ function App() {
 
     if (response.status === 409) {
       const data = await response.json();
-      return alert(data.message); // Näyttää: Huone on jo varattu tähän aikaan!
+      return alert(data.message);
     }
 
     const newBooking = await response.json();
-    setBookings(prev => [...prev, newBooking]); // Päivitä lista heti
+    setBookings(prev => [...prev, newBooking]);
     alert("Varaus tehty!");
   };
 
@@ -50,47 +53,37 @@ function App() {
     setBookings(prev => prev.filter(b => b.id !== id));
   };
 
+  // 🔹 Aikavälit
   const timeSlots = [];
-
-for (let hour = 8; hour < 18; hour++) {
-  timeSlots.push(`${String(hour).padStart(2, "0")}:00`);
-  timeSlots.push(`${String(hour).padStart(2, "0")}:30`);
-}
-
-
-const availableTimes = timeSlots.filter(t => {
-  if (!roomId || !date) return false;
-
-  const now = new Date();
-  const slotDateTime = new Date(`${date}T${t}:00`);
-  const today = new Date().toISOString().split("T")[0];
-
-  return (
-    // ei menneitä aikoja tänään
-    (date !== today || slotDateTime > now) &&
-
-    // ei jo varattuja aikoja
-    !bookings.some(
-      b => b.roomId === roomId && b.date === date && b.time === t
-    )
-  );
-});
-
-
-const filteredBookings = roomId
-  ? bookings.filter(b => b.roomId === roomId)
-  : bookings;
-
-const sortedBookings = [...filteredBookings].sort((a, b) => {
-  // Ensin päivä
-  if (a.date !== b.date) {
-    return a.date.localeCompare(b.date);
+  for (let hour = 8; hour < 18; hour++) {
+    timeSlots.push(`${String(hour).padStart(2, "0")}:00`);
+    timeSlots.push(`${String(hour).padStart(2, "0")}:30`);
   }
 
-  // Sama päivä → kellonaika
-  return a.time.localeCompare(b.time);
-});
+  // 🔹 Vapaat ajat dropdowniin
+  const availableTimes = timeSlots.filter(t => {
+    if (!roomId || !date) return false;
 
+    const now = new Date();
+    const slotDateTime = new Date(`${date}T${t}:00`);
+
+    return (
+      (date !== today || slotDateTime > now) &&
+      !bookings.some(
+        b => b.roomId === roomId && b.date === date && b.time === t
+      )
+    );
+  });
+
+  // 🔹 Suodatetut + järjestetyt varaukset
+  const filteredBookings = roomId
+    ? bookings.filter(b => b.roomId === roomId)
+    : bookings;
+
+  const sortedBookings = [...filteredBookings].sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.time.localeCompare(b.time);
+  });
 
   return (
     <div style={{ padding: 20 }}>
@@ -107,33 +100,32 @@ const sortedBookings = [...filteredBookings].sort((a, b) => {
 
       <br /><br />
 
-      <input type="date"
-      min={new Date().toISOString().split("T")[0]}
-      onChange={e => setDate(e.target.value)} 
-      value={date} />
+      <input
+        type="date"
+        min={today}
+        onChange={e => setDate(e.target.value)}
+        value={date}
+      />
+
       <select
-  value={time}
-  onChange={e => setTime(e.target.value)}
-  disabled={!roomId || !date}
->
-  <option value="">Valitse aika</option>
+        value={time}
+        onChange={e => setTime(e.target.value)}
+        disabled={!roomId || !date}
+      >
+        <option value="">Valitse aika</option>
+        {availableTimes.map(t => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
 
-  {availableTimes.map(t => (
-    <option key={t} value={t}>
-      {t}
-    </option>
-  ))}
-</select>
+      <br /><br />
 
-<br />
-
-<input
-  type="text"
-  placeholder="Varaajan nimi"
-  value={name}
-  onChange={e => setName(e.target.value)}
-/>
-
+      <input
+        type="text"
+        placeholder="Varaajan nimi"
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
 
       <br /><br />
 
@@ -147,53 +139,67 @@ const sortedBookings = [...filteredBookings].sort((a, b) => {
           const room = rooms.find(r => r.id === b.roomId);
           return (
             <li key={b.id}>
-              {room ? room.name : "Tuntematon huone"} – {b.date} {b.time} <strong>({b.name})</strong>
-              <button
-                style={{ marginLeft: 10 }}
-                onClick={() => deleteBooking(b.id)}
-              >
+              {room ? room.name : "Tuntematon huone"} – {b.date} {b.time}{" "}
+              <strong>({b.name})</strong>
+              <button style={{ marginLeft: 10 }} onClick={() => deleteBooking(b.id)}>
                 Poista
               </button>
             </li>
           );
         })}
       </ul>
+
       <h2>Päivän varaukset</h2>
 
-<table border="1" cellPadding="8">
-  <thead>
-    <tr>
-      <th>Aika</th>
-      {rooms.map(room => (
-        <th key={room.id}>{room.name}</th>
-      ))}
-    </tr>
-  </thead>
+      <table border="1" cellPadding="8">
+        <thead>
+          <tr>
+            <th>Aika</th>
+            {rooms.map(room => (
+              <th key={room.id}>{room.name}</th>
+            ))}
+          </tr>
+        </thead>
 
-  <tbody>
-    {timeSlots.map(time => (
-      <tr key={time}>
-        <td>{time}</td>
+        <tbody>
+          {timeSlots.map(time => (
+            <tr key={time}>
+              <td>{time}</td>
 
-        {rooms.map(room => {
-          const booking = bookings.find(
-            b =>
-              b.roomId === room.id &&
-              b.date === date &&
-              b.time === time
-          );
+              {rooms.map(room => {
+                const booking = bookings.find(
+                  b =>
+                    b.roomId === room.id &&
+                    b.date === date &&
+                    b.time === time
+                );
 
-          return (
-            <td key={room.id + time}>
-              {booking ? booking.name : "Vapaa"}
-            </td>
-          );
-        })}
-      </tr>
-    ))}
-  </tbody>
-</table>
+                const slotDateTime = new Date(`${date}T${time}:00`);
+                const now = new Date();
+                const isPast = date === today && slotDateTime < now;
 
+                let bgColor = "";
+                if (isPast) bgColor = "#eeeeee";        // harmaa
+                else if (booking) bgColor = "#f8d7da";  // punainen
+                else bgColor = "#d4edda";               // vihreä
+
+                return (
+                  <td
+                    key={room.id + time}
+                    style={{ backgroundColor: bgColor }}
+                  >
+                    {booking
+                      ? booking.name
+                      : isPast
+                      ? "Mennyt"
+                      : "Vapaa"}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -39,3 +39,7 @@
 - miten saan poistettua tämän päivän varaus vaihtoehdoista jo menneet kellonajat?
 
 - voiko eri neuvotteluhuoneen varaukset saada näkyviin samalle sivulle table muotoon?
+
+- miten saan taulukon solujen värit olemaan eriväriset kun aika on jo mennyt, kun aika on varattu ja kuin aika on vapaa?
+
+- voitko tehdä koko app.jsx missä on uudet lisäykset mukana?
