@@ -67,3 +67,11 @@
 - voiko nappia uudestaan painamalla perua varauksensa?
 
 - voitko tehdä kokonaisen App.jsx version
+
+- mietin olisiko parempi että voin valita ajan niin kuin nyt on mutta itse varaus tapahtuisi vasta jos painaisi erillista varaa nappia? Vai onkohan nykyinen malli parempi?
+
+- tee kaksivaiheinen malli.
+
+- voinko varata useamman ajan kerralla ennen kun vahvistan varaukset?
+
+- koko app.jsx
