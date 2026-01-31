@@ -2,57 +2,27 @@ import { useEffect, useState } from "react";
 
 function App() {
   const [rooms, setRooms] = useState([]);
+  const [calendarDate, setCalendarDate] = useState("");
   const [bookings, setBookings] = useState([]);
-
-  const [calendarDate, setCalendarDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
   const [name, setName] = useState("");
-
   const [selectedSlots, setSelectedSlots] = useState([]);
+  const [selectedForDeletion, setSelectedForDeletion] = useState([]);
 
-  // ================= DATA =================
-
+  // Hae huoneet
   useEffect(() => {
     fetch("http://localhost:3001/api/rooms")
       .then(res => res.json())
       .then(setRooms);
+  }, []);
 
+  // Hae varaukset
+  useEffect(() => {
     fetch("http://localhost:3001/api/bookings")
       .then(res => res.json())
       .then(setBookings);
   }, []);
 
-  // ================= TIME SLOTS =================
-
-  const timeSlots = [];
-  for (let hour = 8; hour < 18; hour++) {
-    timeSlots.push(`${String(hour).padStart(2, "0")}:00`);
-    timeSlots.push(`${String(hour).padStart(2, "0")}:30`);
-  }
-
-  const now = new Date();
-
-  // ================= HELPERS =================
-
-  const toggleSlot = (roomId, time) => {
-    setSelectedSlots(prev => {
-      const exists = prev.find(
-        s => s.roomId === roomId && s.time === time
-      );
-
-      if (exists) {
-        return prev.filter(
-          s => !(s.roomId === roomId && s.time === time)
-        );
-      }
-
-      return [...prev, { roomId, time }];
-    });
-  };
-
-  // ================= ACTIONS =================
-
+  // Tee useampi varaus kerralla
   const createBookings = async () => {
     if (!name || selectedSlots.length === 0) {
       alert("Täytä nimi ja valitse vähintään yksi aika");
@@ -82,58 +52,122 @@ function App() {
     }
 
     setSelectedSlots([]);
+    setName("");
     alert("Varaukset tehty!");
   };
 
-  const deleteBooking = async (id) => {
-    await fetch(`http://localhost:3001/api/bookings/${id}`, {
-      method: "DELETE",
-    });
-    setBookings(prev => prev.filter(b => b.id !== id));
+  // Poista useampi varaus kerralla
+  const deleteSelectedBookings = async () => {
+    for (const slot of selectedForDeletion) {
+      const booking = bookings.find(
+        b =>
+          b.roomId === slot.roomId &&
+          b.date === calendarDate &&
+          b.time === slot.time &&
+          b.name === name
+      );
+      if (booking) {
+        await fetch(`http://localhost:3001/api/bookings/${booking.id}`, {
+          method: "DELETE",
+        });
+        setBookings(prev => prev.filter(b => b.id !== booking.id));
+      }
+    }
+    setSelectedForDeletion([]);
+    setName("");
   };
 
-  // ================= UI =================
+  // 30 minuutin aikavälit 08:00-17:30
+  const timeSlots = [];
+  for (let hour = 8; hour < 18; hour++) {
+    timeSlots.push(`${String(hour).padStart(2, "0")}:00`);
+    timeSlots.push(`${String(hour).padStart(2, "0")}:30`);
+  }
+
+  const isPast = (date, time) => {
+    const now = new Date();
+    const slotTime = new Date(`${date}T${time}:00`);
+    return slotTime < now;
+  };
+
+  const toggleSlot = (roomId, time) => {
+    if (!calendarDate) return;
+    const already = selectedSlots.find(
+      s => s.roomId === roomId && s.time === time
+    );
+    if (already) {
+      setSelectedSlots(prev =>
+        prev.filter(s => !(s.roomId === roomId && s.time === time))
+      );
+    } else {
+      setSelectedSlots(prev => [...prev, { roomId, time }]);
+    }
+  };
+
+  const toggleForDeletion = (roomId, time) => {
+    const already = selectedForDeletion.find(
+      s => s.roomId === roomId && s.time === time
+    );
+    if (already) {
+      setSelectedForDeletion(prev =>
+        prev.filter(s => !(s.roomId === roomId && s.time === time))
+      );
+    } else {
+      setSelectedForDeletion(prev => [...prev, { roomId, time }]);
+    }
+  };
+
+  const sortedBookings = [...bookings].sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.time.localeCompare(b.time);
+  });
 
   return (
     <div style={{ padding: 20 }}>
       <h1>Kokoushuonevaraus</h1>
 
-      <div style={{ marginBottom: 10 }}>
-        <strong>Päivä: </strong>
-        <input
-          type="date"
-          min={new Date().toISOString().split("T")[0]}
-          value={calendarDate}
-          onChange={e => {
-            setCalendarDate(e.target.value);
-            setSelectedSlots([]);
-          }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 10 }}>
-        <strong>Varaajan nimi: </strong>
+      <label>
+        Varaajan nimi:{" "}
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="Kirjoita nimi"
+          placeholder="Kirjoita nimesi"
         />
-      </div>
+      </label>
+
+      <br /><br />
+
+      <label>
+        Päivämäärä:{" "}
+        <input
+          type="date"
+          value={calendarDate}
+          onChange={e => setCalendarDate(e.target.value)}
+          min={new Date().toISOString().split("T")[0]}
+        />
+      </label>
+
+      <br /><br />
 
       <button
         onClick={createBookings}
         disabled={selectedSlots.length === 0 || !name}
-        style={{ marginBottom: 10 }}
       >
-        Varaa aika/ajat
+        Varaa valitut ajat
       </button>
 
+      <button
+        onClick={deleteSelectedBookings}
+        disabled={selectedForDeletion.length === 0 || !name}
+        style={{ marginLeft: 10 }}
+      >
+        Poista valitut omat varaukset
+      </button>
 
-      <h2>
-        Päivän varaukset ({calendarDate.split("-").reverse().join(".")})
-      </h2>
+      <hr />
 
+      <h2>Päivän varaukset ({calendarDate || "-"})</h2>
       <table border="1" cellPadding="8">
         <thead>
           <tr>
@@ -148,7 +182,6 @@ function App() {
           {timeSlots.map(time => (
             <tr key={time}>
               <td>{time}</td>
-
               {rooms.map(room => {
                 const booking = bookings.find(
                   b =>
@@ -157,53 +190,57 @@ function App() {
                     b.time === time
                 );
 
-                const slotDateTime = new Date(`${calendarDate}T${time}:00`);
-                const isPast = slotDateTime < now;
+                const selected = selectedSlots.find(
+                  s => s.roomId === room.id && s.time === time
+                );
 
-                const isSelected = selectedSlots.some(
+                const selectedDelete = selectedForDeletion.find(
                   s => s.roomId === room.id && s.time === time
                 );
 
                 let background = "#8f8"; // vapaa
-                if (isPast) background = "#ccc";
-                if (booking) background = "#f88";
-                if (isSelected) background = "#6af";
+                if (isPast(calendarDate, time)) background = "#ccc"; // mennyt
+                if (booking && booking.name !== name) background = "#faa"; // muiden varaus
+                if (booking && booking.name === name) background = "#f55"; // oma varaus
+                if (selected) background = "#6af"; // valittu varaus
+                if (selectedDelete) background = "#55f"; // valittu poisto
 
                 return (
                   <td
                     key={room.id + time}
                     style={{
-                      backgroundColor: background,
-                      cursor: isPast ? "default" : "pointer",
-                      textAlign: "center",
+                      background,
+                      cursor:
+                        (!booking || booking.name === name) &&
+                        !isPast(calendarDate, time)
+                          ? "pointer"
+                          : "default",
                       transition: "0.2s"
                     }}
                     onClick={() => {
-                      if (isPast) return;
-
-                      if (booking) {
-                        if (
-                          window.confirm(
-                            `Perutaanko varaus (${booking.name})?`
-                          )
-                        ) {
-                          deleteBooking(booking.id);
-                        }
-                      } else {
+                      if (isPast(calendarDate, time)) return;
+                      if (!booking) {
                         toggleSlot(room.id, time);
+                      } else if (booking.name === name) {
+                        toggleForDeletion(room.id, time);
                       }
                     }}
-                    onMouseEnter={e => {
-                      if (!booking && !isPast)
-                        e.target.style.opacity = 0.8;
+                    onMouseOver={e => {
+                      if (
+                        (!booking || booking.name === name) &&
+                        !isPast(calendarDate, time)
+                      )
+                        e.target.style.opacity = 0.7;
                     }}
-                    onMouseLeave={e => {
+                    onMouseOut={e => {
                       e.target.style.opacity = 1;
                     }}
                   >
                     {booking
-                      ? booking.name
-                      : isPast
+                      ? booking.name === name
+                        ? `${booking.name} (oma)`
+                        : booking.name
+                      : isPast(calendarDate, time)
                       ? "Mennyt"
                       : "Vapaa"}
                   </td>

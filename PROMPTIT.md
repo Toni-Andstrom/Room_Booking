@@ -75,3 +75,13 @@
 - voinko varata useamman ajan kerralla ennen kun vahvistan varaukset?
 
 - koko app.jsx
+
+-voiko varauksen jälkeen tyhjentää varaajan nimi
+
+- miten saisin lisättyä käyttäjäkohtaisen perumisen (vain oma varaus)
+
+- voitko lisätä kaiken app.jsx
+
+- en pitänyt luomastasi varausten listasta. Onko mahdollista että varaaja voi poistaa omat varauksensa vaikkapa erillisellä napilla niin että voi valita poistaako yhden vai monta aikaa samalla tavalla kuin varatessakin
+
+- saako nimikentän tyhjäksi myös kun on poistanut varauksia. Sama logiikka kuin varatessa aikoja
