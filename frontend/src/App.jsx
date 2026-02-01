@@ -22,6 +22,7 @@ function App() {
       .then(setBookings);
   }, []);
 
+  
   // Tee useampi varaus kerralla
   const createBookings = async () => {
     if (!name || selectedSlots.length === 0) {
