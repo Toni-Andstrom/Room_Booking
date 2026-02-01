@@ -161,6 +161,7 @@ function App() {
         onClick={deleteSelectedBookings}
         disabled={selectedForDeletion.length === 0 || !name}
         style={{ marginLeft: 10 }}
+        title="Lisää oma nimesi voidaksesi poistaa varauksia" 
       >
         Poista valitut omat varaukset
       </button>
